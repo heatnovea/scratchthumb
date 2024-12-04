@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Paragraph with Code</title>
+</head>
+<body>
+<p>
+&lt;script&gt;<br>
+var parser = document.createElement("a");<br>
+parser.href = document.location.href;<br>
+if(parser.hostname === "scratch.mit.edu" && parser.pathname.startsWith("/projects/")) {<br>
+var projectID = parser.pathname.replace(/\\D/g,'');<br>
+var script = document.createElement('script');<br>
+script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js';<br>
+script.type = 'text/javascript';<br>
+script.onload = animThumbnailMain;<br>
+document.getElementsByTagName('head')[0].appendChild(script);<br>
+} else {<br>
+alert("Please click the bookmark on a Scratch project");<br>
+}<br><br>
+function animThumbnailMain() {<br>
+snackBarCSS = function() {<br>
+var css = document.createElement("style");<br>
+css.innerHTML = `...`; <!-- Replace '...' with the rest of the CSS if necessary -->
+document.head.appendChild(css);<br>
+}<br><br>
+error = function error(err) {<br>
+if(String(err).includes("parameter 1 is not of type 'Blob'.")) {<br>
+document.getElementById("snackbar").innerHTML = 'Error - please upload a downloaded file,<br> not an image from another website.<br><a id="selectThumbnailFile">Select an image</a><br><a onclick="document.getElementById(\'snackbar\').className=\'\';">Close</a>';<br>
+document.getElementById("selectThumbnailFile").onclick = function(){document.getElementById("uploadthumbnail").click();};<br>
+} else {<br>
+document.getElementById("snackbar").innerHTML = 'Error - try a smaller image.<br><a id="selectThumbnailFile">Select an image</a><br><a onclick="document.getElementById(\'snackbar\').className=\'\';">Close</a>';<br>
+document.getElementById("selectThumbnailFile").onclick = function(){document.getElementById("uploadthumbnail").click();};<br>
+}<br>
+}<br><br>
+getCookie = function getCookie(name) {<br>
+var value = "; " + document.cookie;<br>
+var parts = value.split("; " + name + "=");<br>
+if(parts.length == 2) return parts.pop().split(";").shift();<br>
+}<br><br>
+upload = function upload(filelocation) {<br>
+document.getElementById("snackbar").innerHTML = "Reading file...";<br><br>
+var reader1 = new FileReader();<br>
+reader1.onload = function (e) {<br>
+uploadedImage = e.target.result;<br>
+};<br>
+try{reader1.readAsDataURL(filelocation);}catch(err){error(err);return;}<br><br>
+var reader = new FileReader();<br>
+reader.onload = function(e2){<br>
+$.ajax({<br>
+type: "POST",<br>
+url: "/internalapi/project/thumbnail/" + projectID + "/set/",<br>
+data: e2.target.result,<br>
+headers: {<br>
+"X-csrftoken": getCookie("scratchcsrftoken"),<br>
+},<br>
+contentType: "",<br>
+processData: false,<br>
+xhr: function() {<br>
+var xhr = $.ajaxSettings.xhr();<br>
+xhr.upload.onprogress = function(e) {<br>
+if(!document.getElementById("snackbar").innerHTML.includes("Error")){<br>
+var progress = Math.floor(e.loaded / e.total *100) + '%';<br>
+document.getElementById("snackbar").innerHTML = "Uploading file " + progress;<br>
+}<br>
+};<br>
+return xhr;<br>
+},<br>
+success: function(msg) {<br>
+document.getElementById("snackbar").innerHTML = 'The thumbnail was successfully changed.<br><img src="'+uploadedImage+'" height="108" width="144" style="background-color:white;"><br><a id="selectThumbnailFile">Select another image</a><br><a onclick="document.getElementById(\'snackbar\').className=\'\';">Close</a>';<br>
+document.getElementById("selectThumbnailFile").onclick = function(){document.getElementById("uploadthumbnail").click();};<br>
+},<br>
+error: function() {<br>
+error();}<br>
+});<br>
+};<br>
+reader.readAsArrayBuffer(filelocation);<br>
+}<br><br>
+snackBarCSS();<br><br>
+var snackbar = document.createElement("div");<br>
+snackbar.id = "snackbar";<br>
+document.body.appendChild(snackbar);<br>
+document.getElementById("snackbar").innerHTML = '&lt;a id="selectThumbnailFile"&gt;Select an image&lt;/a&gt; or drag and drop anywhere on this page.&lt;br&gt;&lt;a onclick="document.getElementById(\'snackbar\').className=\'\';"&gt;Close&lt;/a&gt;';<br>
+document.getElementById("selectThumbnailFile").onclick = function(){document.getElementById("uploadthumbnail").click();};<br>
+document.getElementById("snackbar").className = "show";<br><br>
+if(!document.getElementById("uploadthumbnail")) {<br>
+var file = document.createElement("input");<br>
+file.id = "uploadthumbnail";<br>
+file.setAttribute("type", "file");<br>
+file.setAttribute("accept", "image/*");<br>
+document.body.appendChild(file);<br>
+document.getElementById("uploadthumbnail").onchange = function() {<br>
+if(document.getElementById('uploadthumbnail').files[0]) upload(document.getElementById('uploadthumbnail').files[0]);<br>
+};<br>
+} else {<br>
+document.getElementById("uploadthumbnail").click();<br>
+}<br><br>
+if(!document.getElementById("uploadthumbnaildrag")){<br>
+var dragloaded = document.createElement("span");<br>
+dragloaded.id = "uploadthumbnaildrag";<br>
+document.body.appendChild(dragloaded);<br><br>
+var dropper = $(document);<br>
+dropper.on("dragover", function(e) {<br>
+e.stopPropagation();<br>
+e.preventDefault();<br>
+e.originalEvent.dataTransfer.dropEffect = "copy";<br>
+});<br>
+dropper.on("drop", function(e) {<br>
+e.stopPropagation();<br>
+e.preventDefault();<br>
+upload(e.originalEvent.dataTransfer.items[0].getAsFile());<br>
+});<br>
+}<br>
+&lt;/script&gt;
+</p>
+</body>
+</html>
